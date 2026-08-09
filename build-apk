@@ -1,0 +1,45 @@
+name: Build Android APK
+
+# Tự chạy mỗi khi push code lên nhánh main
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest   # Build Android không cần macOS, dùng máy Linux miễn phí nhanh hơn
+
+    steps:
+      - name: Lấy code từ repo
+        uses: actions/checkout@v4
+
+      - name: Cài Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Cài package
+        run: flutter pub get
+
+      - name: Sinh khung project Android tự động
+        run: flutter create . --platforms=android --project-name english_b1_app
+
+      - name: Đặt code vào đúng thư mục lib/ mà Flutter yêu cầu
+        run: |
+          mkdir -p lib
+          cp main.dart lib/main.dart
+          cp levels_data.dart lib/levels_data.dart
+
+      - name: Cài lại package sau khi có khung project
+        run: flutter pub get
+
+      - name: Build file APK (bản release, không cần ký để cài trực tiếp)
+        run: flutter build apk --release
+
+      - name: Upload file APK để tải về
+        uses: actions/upload-artifact@v4
+        with:
+          name: english_b1_app-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
